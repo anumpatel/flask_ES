@@ -1,26 +1,32 @@
 from flask import  Flask, render_template,\
     redirect, session,  url_for, request
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, login_user, login_required,logout_user, current_user
+from flask_login import LoginManager, login_user,\
+    login_required,logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from forms import RegisterForm, LoginForm
+
 from flask_pymongo import PyMongo
 from elasticsearch import Elasticsearch, helpers
-import certifi
 from bson.json_util import dumps
 from bson.objectid import ObjectId
-from utils import create_body, build_response_dict
 from decouple import config
+import certifi
+
+from utils import create_body, build_response_dict
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = config('SQLALCHEMY_URI')
 app.config['MONGO_URI'] = config('MONGO_URI')
 app.secret_key = config('SECRET_KEY')
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
 db = SQLAlchemy(app)
 mongo = PyMongo(app)
+
 es = Elasticsearch([config('ELASTIC_URI')], http_auth = (config('ELASTIC_U'), config('ELASTIC_P')), scheme="https", port=443, use_ssl = True, ca_certs=certifi.where())
 
 
@@ -29,6 +35,7 @@ def load_user(username):
     return User.query.filter_by(username = username).first()
 
 class User(db.Model):
+    # User model for authentication
     id = db.Column(db.Integer, primary_key = True)
     username = db.Column(db.String(70), unique = True)
     email = db.Column(db.String(70), unique = True)
@@ -68,11 +75,37 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return render_template('login.html', form = LoginForm())
+@app.route('/register', methods = ['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect('/search')
+
+    form = RegisterForm()
+    
+    if request.method == 'GET':
+        return render_template('register.html', form = form)
+    
+
+    elif request.method == 'POST':
+        if form.validate_on_submit():
+            if User.query.filter_by(email = form.email.data).count() > 0:
+                return render_template('register.html', error_msg = 'Email address already exists', form = form)
+            
+            elif User.query.filter_by(username = form.username.data).count() > 0:
+                return render_template('register.html', error_msg = 'Username already exists', form = form)
+            
+            else:
+
+                user_to_add = User(form.username.data, form.email.data, form.f_name.data, form.l_name.data, form.password.data)
+                db.session.add(user_to_add)
+                db.session.commit()
+                login_user(user_to_add)
+                return redirect('/search')
+        else:
+            return render_template('register.html', error_msg = 'Error with the form!', form = form)
+
+    return render_template('register.html')
+
 
 @app.route('/login', methods = ['GET', 'POST'])
 def login():
@@ -98,34 +131,12 @@ def login():
             return render_template('login.html', form = form, error_msg = 'Validation failed')
 
 
-@app.route('/register', methods = ['GET', 'POST'])
-def register():
-    if current_user.is_authenticated:
-        return redirect('/search')
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return render_template('login.html', form = LoginForm())
 
-    form = RegisterForm()
-    
-    if request.method == 'GET':
-        return render_template('register.html', form = form)
-    
-    #TODO CHANGE MESSAGES
-    elif request.method == 'POST':
-        if form.validate_on_submit():
-            if User.query.filter_by(email = form.email.data).count() > 0:
-                return render_template('register.html', error_msg = 'Email address already exists', form = form)
-            elif User.query.filter_by(username = form.username.data).count() > 0:
-                return render_template('register.html', error_msg = 'Username already exists', form = form)
-            else:
-
-                user_to_add = User(form.username.data, form.email.data, form.f_name.data, form.l_name.data, form.password.data)
-                db.session.add(user_to_add)
-                db.session.commit()
-                login_user(user_to_add)
-                return redirect('/search')
-        else:
-            return render_template('register.html', error_msg = 'Error with the form!', form = form)
-
-    return render_template('register.html')
 
 @app.route('/search')
 @login_required
@@ -139,6 +150,7 @@ def search():
 
     if search_string is not None:
         if len(search_string) > 0:
+            # matching query string with wild-card
             search_string = "*{}*".format(search_string)
             es_result = es.search(index='_all', doc_type='airport', q=search_string, analyze_wildcard = True, size = 1000)
             es_response_dict = build_response_dict(es_result)
@@ -148,8 +160,7 @@ def search():
         else:
             pass
 
-    else:
-        return render_template('search.html')
+    return render_template('search.html')
 
 
 if __name__ == '__main__':

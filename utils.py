@@ -1,5 +1,4 @@
 import json
-import urllib2
 from bs4 import BeautifulSoup
 
 def create_body(filename):

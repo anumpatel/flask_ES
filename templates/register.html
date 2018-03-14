@@ -1,0 +1,62 @@
+{% extends 'layout.html' %} {% block body %}
+
+<div class="row">
+        <div class="col-md-12">
+            <h2 class="text-center text-white mb-4">Login</h2>
+            <div class="row">
+                <div class="col-md-6 mx-auto">
+    
+                    <div class="card rounded-0">
+                        <div class="card-header">
+                            <h3 class="mb-0">Login</h3>
+                        </div>
+                        <div class="card-body">
+                            {{error_msg}}
+    
+                            <form method="POST" class="form-horizontal" action="/register">
+                                {{ form.hidden_tag() }}
+                                <div class="form-group">
+                                    <label >Username</label>
+                                    <input id="username" name="username" type="text" class="form-control" placeholder="Username" maxlength="70" required>
+                                </div>
+                                <div class="form-group">
+                                    <label >Email</label>
+                                    <input id="username" name="email" type="text" class="form-control" placeholder="Email" maxlength="70" required>
+                                </div>
+                                <div class="form-group">
+                                    <label >First Name</label>
+                                    <input id="username" name="f_name" type="text" class="form-control" placeholder="First Name" maxlength="70" required>
+                                </div>
+                                <div class="form-group">
+                                    <label >Last Name</label>
+                                    <input id="username" name="l_name" type="text" class="form-control" placeholder="Last Name" maxlength="70" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Password</label>
+                                    <input id="password" name="password" type="password" class="form-control" placeholder="Password" maxlength="70" required>
+                                </div>
+                                <div>
+                                    <label class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input">
+                                        <span class="custom-control-indicator"></span>
+    
+                                    </label>
+                                </div>
+                                <input type="submit" class="btn btn-success" value="Sign Up">&nbsp;&nbsp;&nbsp;
+                                <a href="/login">
+                                    <input type="button" class="btn btn-info float-right" value="Login Here">
+                                </a>
+    
+                            </form>
+                        </div>
+                    </div>
+    
+                </div>
+    
+    
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+

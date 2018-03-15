@@ -13,13 +13,15 @@ Flask, SQLAlchemy, PyMongo, Elasticsearch
 ### Installing
 
 Create .env file with following variables:
+
+```
 SQLALCHEMY_URI = mysql://<user>:<pass>@<IP>/db
 MONGO_URI = mongo-uri
 SECRET_KEY = TOPSECRET
 ELASTIC_URI = elasstic_search-url
 ELASTIC_U = user
 ELASTIC_P = pass
-
+```
 
 Create virtual env:
 ```

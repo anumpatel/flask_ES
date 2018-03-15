@@ -72,11 +72,13 @@ class User(db.Model):
 
 @app.route('/')
 def index():
+    '''Home Page'''
     return render_template('index.html')
 
 
 @app.route('/register', methods = ['GET', 'POST'])
 def register():
+    '''Registration'''
     if current_user.is_authenticated:
         return redirect('/search')
 
@@ -88,6 +90,7 @@ def register():
 
     elif request.method == 'POST':
         if form.validate_on_submit():
+            #checks if username / email is already registered.
             if User.query.filter_by(email = form.email.data).count() > 0:
                 return render_template('register.html', error_msg = 'Email address already exists', form = form)
             
@@ -95,11 +98,13 @@ def register():
                 return render_template('register.html', error_msg = 'Username already exists', form = form)
             
             else:
-
+                #stores user information into db
                 user_to_add = User(form.username.data, form.email.data, form.f_name.data, form.l_name.data, form.password.data)
                 db.session.add(user_to_add)
                 db.session.commit()
+                #user logs in automatically after registration
                 login_user(user_to_add)
+                #redirect to search page
                 return redirect('/search')
         else:
             return render_template('register.html', error_msg = 'Error with the form!', form = form)
@@ -109,7 +114,9 @@ def register():
 
 @app.route('/login', methods = ['GET', 'POST'])
 def login():
+    '''Login'''
     if current_user.is_authenticated:
+        #redirects a user to search page if user is already logged in
         return redirect('/search')
 
     form = LoginForm()
@@ -118,6 +125,7 @@ def login():
     elif request.method == 'POST':
         if form.validate_on_submit():
             c_user = User.query.filter_by(username = form.username.data).first()
+            #validation of credentials 
             if c_user:
                 if c_user.check_pwd(form.password.data):
                     login_user(c_user)
@@ -134,6 +142,7 @@ def login():
 @app.route('/logout')
 @login_required
 def logout():
+    '''Log Out'''
     logout_user()
     return render_template('login.html', form = LoginForm())
 
@@ -141,9 +150,11 @@ def logout():
 @app.route('/search')
 @login_required
 def search():
+    '''Search Page'''
     search_string = request.args.get('q')
     explore_id = request.args.get('id')
     if explore_id is not None:
+        #returns raw mongo data if a row is clicked
         explore = mongo.db.airports.find({"_id": ObjectId(explore_id)})
         return render_template('raw.html', data = explore)
         
